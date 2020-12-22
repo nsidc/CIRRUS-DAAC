@@ -3,6 +3,8 @@ import argparse
 import logging
 from botocore.exceptions import ClientError
 
+from src.dicpelr import Dicpelr
+
 '''
 usage: purge.py [-h] -p PROFILE -t TAGS
                 [-d {cloudformation,cloudwatch,dynamodb,ec2,ecs,es,events,lambda,logs,s3,secretsmanager,sns,sqs,states}]
@@ -47,8 +49,8 @@ examples:
   
 '''
 
-KNOWN_TYPES = ['cloudformation', 'cloudwatch', 'dynamodb', 'ec2', 'ecs', 'es', 'events', 'lambda', 'logs', 's3',
-               'secretsmanager', 'sns', 'sqs', 'states']
+KNOWN_TYPES = ['cloudformation', 'cloudwatch', 'dynamodb', 'ec2', 'ecs', 'es', 'events', 'lambda',
+               'logs', 's3', 'secretsmanager', 'sns', 'sqs', 'states', 'all-types']
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--profile", dest="profile", required=True,
@@ -404,6 +406,11 @@ def delete_s3(resource):
     bucket.delete()
 
 
+def delete_all_types():
+    d = Dicpelr()
+    d.delete_all_resources()
+
+
 def delete_bucket_completely(bucket_name):
     client = session.client('s3')
     response = client.list_object_versions(Bucket=bucket_name)
@@ -509,7 +516,9 @@ for resource in resources:
         continue
 
     try:
-        if resource['Class'] == 'lambda':
+        if resource['Class'] == 'all-types':
+            delete_all_types()
+        elif resource['Class'] == 'lambda':
             delete_lambda(resource)
         elif resource['Class'] == 'events':
             delete_events(resource)
